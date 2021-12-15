@@ -8,12 +8,21 @@
       "internalConsoleOptions": "neverOpen",
       "disableOptimisticBPs": true,
       "cwd": "${workspaceFolder}",
-      "runtimeExecutable": "npm",
-      "args": [
-        "run",
-        "test",
-        "--",
+      "env": {
+        "NODE_OPTIONS": "--experimental-vm-modules"
+      },
+      "stopOnEntry": false,
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/node_modules/.bin/jest",
+        "--runInBand"
       ]
+      // "runtimeExecutable": "npm",
+      // "args": [
+      //   "run",
+      //   "test",
+      //   "--",
+      // ]
     }
   ]
 }
