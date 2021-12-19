@@ -118,4 +118,5 @@ dist
 .pnp.*
 
 
-server/downloads
+server/downloads/*
+!server/downloads/.gitkeep
