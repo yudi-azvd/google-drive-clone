@@ -1,22 +1,36 @@
+import fs from 'fs'
+import FormData from 'form-data'
+
 import { describe, test, expect, jest } from '@jest/globals'
 import Routes from '../../src/routes'
+import TestUtil from '../_util/testUtil'
+import UploadHandler from '../../src/uploadHandler'
+import { logger } from '../../src/logger'
 
 describe('Routes test suite ', () => {
+  const request = TestUtil.generateReadableStream(['some', 'file', 'bytes'])
+  const response = TestUtil.generateWritableStream(() => { })
+
   const defaultParams = {
-    req: {
+    req: Object.assign(request, {
       headers: {
         'Content-Type': 'multipart/form-data'
       },
       method: '',
       body: {}
-    },
-    res: {
+    }),
+    res: Object.assign(response, {
       setHeader: jest.fn(),
       writeHead: jest.fn(),
       end: jest.fn(),
-    },
+    }),
     values: () => Object.values(defaultParams)
   }
+
+  beforeEach(() => {
+    jest.spyOn(logger, 'info')
+      .mockImplementation()
+  })
 
   describe('setSocketInstance', () => {
     test('should store io instance', () => {
@@ -108,6 +122,36 @@ describe('Routes test suite ', () => {
 
       expect(params.res.writeHead).toHaveBeenCalledWith(200)
       expect(params.res.end).toHaveBeenCalledWith(JSON.stringify(fileStatusesMock))
+    })
+  })
+
+  describe('post', () => {
+    test('it should validate post route workflow', async () => {
+      const routes = new Routes('/tmp')
+      const options = {
+        ...defaultParams
+      }
+
+      options.req.method = 'POST'
+      options.req.url = '?socketId=10'
+
+      jest.spyOn(
+        UploadHandler.prototype,
+        UploadHandler.prototype.registerEvents.name
+      )
+        .mockImplementation((headers, onFinish) => {
+          const writable = TestUtil.generateWritableStream(() => { })
+          writable.on('finish', onFinish)
+          return writable
+        })
+
+      await routes.handler(...options.values())
+
+      expect(UploadHandler.prototype.registerEvents).toHaveBeenCalled()
+      expect(options.res.writeHead).toHaveBeenCalledWith(200)
+
+      const expectedResult = JSON.stringify({ result: 'File uploaded with success!' })
+      expect(defaultParams.res.end).toHaveBeenCalledWith(expectedResult)
     })
   })
 })
